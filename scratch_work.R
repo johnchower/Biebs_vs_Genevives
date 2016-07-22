@@ -3,10 +3,18 @@
 # Does the conversion function work?
 source('fn_convert_df_graph_to_igraph.r')
 
-connections.frame <- 
-  data.frame(tip = c(1,2,3,4), tail = c(3,3,4,5))
+bonacich.frame.I <- 
+  data.frame(tail = c(1,2,3,4), tip = c(3,3,4,5))
 
-connections.graph <- convert_df_graph_to_igraph(connections.frame)
+bonacich.frame.II <-
+  data.frame(tail = c("B", "C", "D", "E"), tip = rep("A", times = 4))
+
+bonacich.frame.III <-
+  data.frame(tail = c("a", "b", "c", "d", "e"), tip = c("b", "c", "d", "a", "a"))
+
+bonacich.graph.I <- convert_df_graph_to_igraph(bonacich.frame.I)
+bonacich.graph.II <- convert_df_graph_to_igraph(bonacich.frame.II)
+bonacich.graph.III <- convert_df_graph_to_igraph(bonacich.frame.III)
 
 # How long does it take on a large graph?
 # Hundredths of a second on a graph with 30,000 vertices and 10,000 edges (which is where Gloo is)
