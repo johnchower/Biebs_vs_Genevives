@@ -12,6 +12,7 @@ user_connections <- df_list$USER_CONNECTIONS
 posts <- df_list$POSTS
 comments <- df_list$COMMENTS
 follows <- df$FOLLOWS
+space_membership <- df$SPACE_MEMBERSHIP
 
 # Transform
 
@@ -28,3 +29,6 @@ comments %>%
 
 follows %>%
   write.csv(file = "follows.csv")
+
+space_membership %>%
+  write.csv(file = "space_membership.csv")
