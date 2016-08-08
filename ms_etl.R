@@ -38,7 +38,8 @@ graph_spaces <- space_membership %>%
   rename(user1_id = minimum, user2_id = maximum) %>%
   mutate(connection_type = "both_ways")
 
-graph_data <- rbind(graph_connections, graph_follows, graph_spaces)
+graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>%
+  distinct
   
 
 # Load ####
