@@ -43,17 +43,5 @@ graph_data <- rbind(graph_connections, graph_follows, graph_spaces)
 
 # Load ####
 
-user_connections %>%
-  write.csv(file = "user_connections.csv")
-
-posts %>%
-  write.csv(file = "posts.csv")
-
-comments %>% 
-  write.csv(file = "comments.csv")
-
-follows %>%
-  write.csv(file = "follows.csv")
-
-space_membership %>%
-  write.csv(file = "space_membership.csv")
+graph_data %>%
+  write.csv("graph_data.csv")
