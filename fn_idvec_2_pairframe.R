@@ -4,5 +4,17 @@
 # Each row is a pair of elements of v.
 
 idvec_2_pairframe <- function(v){
-  
+  v %>%
+    {
+      merge(
+        x = data.frame(vec1 = .)
+        , y = data.frame(vec2 = .)
+        , all = T
+      )
+    } %>%
+    group_by(vec1, vec2) %>%
+    mutate(minimum = min(vec1, vec2), maximum = max(vec1, vec2)) %>% 
+    ungroup %>%
+    distinct(minimum, maximum) %>% 
+    return
 }
