@@ -9,6 +9,8 @@ load_basic_schema <-
     path_posts = "input_csvs/posts.csv"
     ,
     path_comments = "input_csvs/comments.csv"
+    ,
+    path_follows = "input_csvs/follows.csv"
   ){
     user_connections <- path_user_connections %>%
       read.table(
@@ -31,10 +33,18 @@ load_basic_schema <-
         , stringsAsFactors = F
       )
     
+    follows <- path_follows %>%
+      read.table(
+        header = T
+        , sep = ','
+        , stringsAsFactors = F
+      )
+    
     return(list(
       USER_CONNECTIONS = user_connections
       , POSTS = posts
       , COMMENTS = comments
+      , FOLLOWS = follows
     ))
 }
 
