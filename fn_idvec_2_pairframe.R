@@ -16,5 +16,6 @@ idvec_2_pairframe <- function(v){
     mutate(minimum = min(vec1, vec2), maximum = max(vec1, vec2)) %>% 
     ungroup %>%
     distinct(minimum, maximum) %>% 
+    filter(minimum != maximum) %>%
     return
 }
