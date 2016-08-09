@@ -1,4 +1,12 @@
 # ms_etl
+# This script transforms the data taken from production into two data frames and saves
+# them as csv files.
+# One contains all of the graph information (user connections, follows, etc.)
+# The other contains the "engagement" information (posts, comments, etc.)
+
+
+
+
 
 library(magrittr)
 library(plyr)
@@ -48,7 +56,7 @@ graph_spaces <- space_membership %>%
     )
   }
 
-graph_data_3 <- rbind(graph_connections, graph_follows, graph_spaces) %>%
+graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>%
   distinct %>% 
   filter(user1_id != user2_id) %>%
   arrange(user1_id, user2_id)
