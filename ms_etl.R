@@ -11,11 +11,13 @@
 library(magrittr)
 library(plyr)
 library(dplyr)
+library(chron)
 
 source('fn_load_basic_schema.r')
 source('fn_idvec_2_pairframe.r')
 source('fn_convert_df_graph_to_igraph.r')
 source('fn_determine_connection_type.r')
+source('fn_convert_production_datetime_to_chron.r')
 
 df_list <- load_basic_schema()
 
@@ -31,39 +33,60 @@ space_membership <- df_list$SPACE_MEMBERSHIP
 # Create graph of user connections, follows, and shared spaces ####
 
 graph_connections <- user_connections %>%
-  select(user1_id = connectable1_id, user2_id =  connectable2_id) %>%
+  select(user1_id = connectable1_id, user2_id =  connectable2_id, created_at) %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at)) %>%
   {
     data.frame(
       user1_id = c(.$user1_id, .$user2_id)
       , user2_id = c(.$user2_id, .$user1_id)
+      , created_at = rep(.$created_at, times = 2)
     )
   }
-
-graph_follows <- follows %>%
-  select(user1_id = followable_id, user2_id = follower_id) 
 
 graph_spaces <- space_membership %>%
   ddply(
     .variables = .(membershipable_id)
-    , .fun = function(df){idvec_2_pairframe(df$member_id) %>% return}
-  ) %>%
-  select(-membershipable_id) %>%
-  rename(user1_id = minimum, user2_id = maximum) %>%
+    , .fun = idvec_2_pairframe
+  ) %>% 
+  group_by(user1_id, user2_id) %>% 
+  summarise(created_at = min(created_at)) %>% 
   {
     data.frame(
       user1_id = c(.$user1_id, .$user2_id)
       , user2_id = c(.$user2_id, .$user1_id)
+      , created_at = rep(.$created_at, times = 2)
     )
-  }
+  } 
 
-graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>%
+graph_follows <- follows %>%
+  select(user1_id = followable_id, user2_id = follower_id, created_at) %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
+
+graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>% 
   distinct %>% 
-  filter(user1_id != user2_id) %>%
-  arrange(user1_id, user2_id)
+  group_by(user1_id, user2_id) %>%
+  summarise(created_at = min(created_at))
 
 # Create data frame that contains all info necessary to calculate the energy score ####
 
+# Comments on posts
 
+comments %>%
+  select(user_id, post_id) %>%
+  left_join(
+    select(posts, id, owner_id)
+    , by = c ("post_id" = "id")
+  ) %>% 
+  group_by(owner_id, post_id) %>%
+  summarise(number_of_comments = n()) %>% 
+  ungroup %>%
+  group_by(owner_id) %>%
+  summarise(
+    number_of_posts = length(unique(post_id))
+    , number_of_comments = sum(number_of_comments)
+  ) %>%
+  arrange(desc(number_of_comments), owner_id) %>% View
+  
 
 # Load ####
 
