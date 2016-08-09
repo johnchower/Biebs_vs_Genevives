@@ -48,14 +48,14 @@ graph_spaces <- space_membership %>%
     )
   }
 
-graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>%
+graph_data_3 <- rbind(graph_connections, graph_follows, graph_spaces) %>%
   distinct %>% 
+  filter(user1_id != user2_id) %>%
   arrange(user1_id, user2_id)
 
 # Create data frame that contains all info necessary to calculate the energy score ####
 
 
-  
 
 # Load ####
 
