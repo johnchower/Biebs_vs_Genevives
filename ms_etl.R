@@ -22,11 +22,20 @@ source('fn_convert_production_datetime_to_chron.r')
 df_list <- load_basic_schema()
 
 # "Extract" ####
-user_connections <- df_list$USER_CONNECTIONS
-posts <- df_list$POSTS
-comments <- df_list$COMMENTS
-follows <- df_list$FOLLOWS
-space_membership <- df_list$SPACE_MEMBERSHIP
+user_connections <- df_list$USER_CONNECTIONS %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
+
+posts <- df_list$POSTS %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
+
+comments <- df_list$COMMENTS %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
+
+follows <- df_list$FOLLOWS %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
+
+space_membership <- df_list$SPACE_MEMBERSHIP %>%
+  mutate(created_at = convert_production_datetime_to_chron(created_at))
 
 # Transform ####
 
@@ -34,7 +43,6 @@ space_membership <- df_list$SPACE_MEMBERSHIP
 
 graph_connections <- user_connections %>%
   select(user1_id = connectable1_id, user2_id =  connectable2_id, created_at) %>%
-  mutate(created_at = convert_production_datetime_to_chron(created_at)) %>%
   {
     data.frame(
       user1_id = c(.$user1_id, .$user2_id)
@@ -59,8 +67,7 @@ graph_spaces <- space_membership %>%
   } 
 
 graph_follows <- follows %>%
-  select(user1_id = followable_id, user2_id = follower_id, created_at) %>%
-  mutate(created_at = convert_production_datetime_to_chron(created_at))
+  select(user1_id = followable_id, user2_id = follower_id, created_at) 
 
 graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>% 
   distinct %>% 
@@ -70,6 +77,8 @@ graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>%
 # Create data frame that contains all info necessary to calculate the energy score ####
 
 # Comments on posts
+
+
 
 comments %>%
   select(user_id, post_id) %>%

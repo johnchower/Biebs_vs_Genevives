@@ -5,7 +5,6 @@
 
 idvec_2_pairframe <- function(df){
   df %>%
-    mutate(created_at = convert_production_datetime_to_chron(created_at)) %>% 
     select(member_id, created_at) %>% 
     {
       merge(
