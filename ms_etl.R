@@ -22,8 +22,31 @@ source('fn_convert_production_datetime_to_chron.r')
 df_list <- load_basic_schema()
 
 # "Extract" ####
-user_connections <- df_list$USER_CONNECTIONS %>%
-  mutate(created_at = convert_production_datetime_to_chron(created_at))
+user_connections <- df_list$USER_CONNECTIONS 
+
+convert_at_variables_commands <- user_connections %>%
+  colnames %>%
+  grep("_at", ., value = T) %>%
+  paste(
+    "user_connections %>% "
+    , "mutate("
+    , .
+    , " = convert_production_datetime_to_chron("
+    , .
+    , "))"
+    , sep = ""
+  ) %>%
+  as.list 
+
+convert_at_variables_commands %>%
+  lapply(FUN = function(string)
+    {
+      x <- eval(parse(text = string))
+      assign("user_connections", x, envir = globalenv())
+    }) %>% 
+  invisible
+
+rm(convert_at_variables_commands)
 
 posts <- df_list$POSTS %>%
   mutate(created_at = convert_production_datetime_to_chron(created_at))
