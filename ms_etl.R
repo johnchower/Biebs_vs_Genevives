@@ -60,12 +60,14 @@ follows <- df_list$FOLLOWS %>%
 space_membership <- df_list$SPACE_MEMBERSHIP %>%
   mutate(created_at = convert_production_datetime_to_chron(created_at))
 
+rm(df_list)
+
 # Transform ####
 
 # Create graph of user connections, follows, and shared spaces ####
 
 graph_connections <- user_connections %>%
-  select(user1_id = connectable1_id, user2_id =  connectable2_id, created_at) %>%
+  select(user1_id = connectable1_id, user2_id =  connectable2_id, created_at = updated_at) %>%
   {
     data.frame(
       user1_id = c(.$user1_id, .$user2_id)
@@ -74,11 +76,24 @@ graph_connections <- user_connections %>%
     )
   }
 
-graph_spaces <- space_membership %>%
-  ddply(
-    .variables = .(membershipable_id)
-    , .fun = idvec_2_pairframe
-  ) %>% 
+# Spaces graphs
+graph_spaces_0 <- space_membership %>%
+  group_by(membershipable_id) %>%
+  do(idvec_2_pairframe(.))
+
+graph_spaces_with_membershipableid <- graph_spaces_0 %>%
+  group_by(user1_id, user2_id, membershipable_id) %>% 
+  summarise(created_at = min(created_at)) %>% 
+  {
+    data.frame(
+      user1_id = c(.$user1_id, .$user2_id)
+      , user2_id = c(.$user2_id, .$user1_id)
+      , created_at = rep(.$created_at, times = 2)
+      , membershipable_id = rep(.$membershipable_id, times = 2)
+    )
+  }
+
+graph_spaces_without_membershipableid <- graph_spaces_0 %>%
   group_by(user1_id, user2_id) %>% 
   summarise(created_at = min(created_at)) %>% 
   {
@@ -87,12 +102,18 @@ graph_spaces <- space_membership %>%
       , user2_id = c(.$user2_id, .$user1_id)
       , created_at = rep(.$created_at, times = 2)
     )
-  } 
+  }
+######################
 
 graph_follows <- follows %>%
   select(user1_id = followable_id, user2_id = follower_id, created_at) 
 
-graph_data <- rbind(graph_connections, graph_follows, graph_spaces) %>% 
+graph_data <- 
+  rbind(
+    graph_connections
+    , graph_follows
+    , graph_spaces_without_membershipableid
+  ) %>% 
   distinct %>% 
   group_by(user1_id, user2_id) %>%
   summarise(created_at = min(created_at))
