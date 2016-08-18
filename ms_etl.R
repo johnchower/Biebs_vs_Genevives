@@ -12,6 +12,8 @@ library(magrittr)
 library(plyr)
 library(dplyr)
 library(chron)
+library(reshape2)
+
 
 source('fn_load_basic_schema.r')
 source('fn_idvec_2_pairframe.r')
@@ -76,6 +78,10 @@ graph_connections <- user_connections %>%
     )
   }
 
+
+graph_follows <- follows %>%
+  select(user1_id = followable_id, user2_id = follower_id, created_at) 
+
 # Spaces graphs
 graph_spaces_0 <- space_membership %>%
   group_by(membershipable_id) %>%
@@ -105,9 +111,6 @@ graph_spaces_without_membershipableid <- graph_spaces_0 %>%
   }
 ######################
 
-graph_follows <- follows %>%
-  select(user1_id = followable_id, user2_id = follower_id, created_at) 
-
 graph_data <- 
   rbind(
     graph_connections
@@ -119,6 +122,48 @@ graph_data <-
   summarise(created_at = min(created_at))
 
 # Create data frame that contains all info necessary to calculate the energy score ####
+
+# Potential audience size for posts
+
+earliest_connection <- graph_data %>%
+{.$created_at} %>%
+  min %>%
+  floor 
+
+latest_connection <- graph_data %>%
+{.$created_at} %>%
+  max %>%
+  floor 
+
+date_sequence <- data.frame(date = earliest_connection:latest_connection)
+
+
+user_date_connectionscreated <- date_sequence %>% 
+  group_by(date) %>%
+  do(calculate_connections_created(.)) %>%
+  rename(user_id = user1_id) 
+
+user_date_connectionsexisting <- user_date_connectionscreated %>%
+  group_by(user_id, membershipable_id, postable_type) %>%
+  arrange(date) %>%
+  mutate(connections_existing = cumsum(connections_created)) %>% ungroup %>%
+  select(-connections_created) %>%
+  mutate(space_id = membershipable_id) %>%
+  data.table
+
+posts_nomutate <- posts
+
+posts %<>%
+  dplyr::mutate(
+    date = floor(as.numeric(created_at))
+    , space_id = ifelse(postable_type == "Timeline", -1, postable_id)
+  ) %>%
+  data.table
+
+setkey(user_date_connectionsexisting, "user_id", "postable_type", "space_id", "date")
+setkey(posts, "user_id", "postable_type", "space_id", "date")
+
+posts_reaches <- user_date_connectionsexisting[posts, roll = T] 
 
 # Comments on posts
 
